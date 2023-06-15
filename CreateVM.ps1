@@ -1,4 +1,6 @@
+#Clear Any variables set to avoid duplication
 Remove-Variable * -ErrorAction SilentlyContinue
+#Banner messages
 Write-Host "-----------------------------------------"
 Write-Host "---- Cluster VM Creator Tool - V1.0 -----"
 write-host "-----------------------------------------"
@@ -35,7 +37,7 @@ for ($i = 1; $i -le $networkCount; $i++) {
 
 # Get a list of available cluster storage volumes & their space
 $clusterVolumes = Get-ClusterSharedVolume 
-
+#Count the number of Volumes
 $volumeCount = $clusterVolumes.Count
 
 Write-Host "Available Cluster Volumes:"
@@ -43,14 +45,11 @@ for ($i = 0; $i -lt $clusterVolumes.Count; $i++) {
     $volume = $clusterVolumes[$i]
     $volumeName = $volume.Name
     $friendlyVolumeName = $volume.SharedVolumeInfo.FriendlyVolumeName
-
-  $getfreespace = Get-ClusterSharedVolume -Name $volumeName |  select -Property Name -ExpandProperty SharedVolumeInfo
-
-$freespacegb= "{0:N2}" -f ($getfreespace.Partition.FreeSpace/1024/1024/1024)
-
+    #Query for free space on volume
+    $getfreespace = Get-ClusterSharedVolume -Name $volumeName |  select -Property Name -ExpandProperty SharedVolumeInfo
+    $freespacegb= "{0:N2}" -f ($getfreespace.Partition.FreeSpace/1024/1024/1024)
+    #List the volume and its available space
     Write-Host "$($i + 1). $friendlyVolumeName | Free Space: $freespacegb GB"
-
-
 }
 
 # Validate and retrieve the selected volume
@@ -60,16 +59,13 @@ do {
 }
 while ($volumeIndex -lt 0 -or $volumeIndex -ge $clusterVolumes.Count)
 
+#Load Volume path into variable
 $getselectedVolume = Get-ClusterSharedVolume -Name $clusterVolumes[$volumeIndex].Name |  select -Property Name -ExpandProperty SharedVolumeInfo
-
 $selectedVolume = $getselectedVolume.FriendlyVolumeName
 
 # Create a folder for the virtual machine based on the virtual machine name
 $vmFolderPath = Join-Path -Path $selectedVolume -ChildPath $vmName
 
-
-# Prompt for Failover Cluster volume for the hard disk
-# $diskClusterVolume = Read-Host "Enter the Failover Cluster volume for the virtual hard disk (choose from the list above)"
 
 # Create a folder for the virtual hard disk based on the virtual machine name
 $diskFolderPath = Join-Path -Path $vmFolderPath -ChildPath "Virtual Hard Disks"
@@ -80,14 +76,14 @@ New-Item -ItemType Directory -Path $diskFolderPath | Out-Null
 $applyTemplate = Read-Host "Do you want to apply the Windows Server 2019 template? (yes/no)"
 
 if ($applyTemplate -eq "yes" -or $applyTemplate -eq "y" -or $applyTemplate -eq "Y") {
-Write-Output "Give me a few moments while i copy the template for you..."
+    Write-Output "Give me a few moments while i copy the template for you..."
     # Copy existing virtual hard disk image for template
-    $templateDiskPath = "C:\ClusterStorage\Volume1\templates\WinSer2019Template.vhdx"  # Replace with the actual template disk path
+    # Replace with the actual template disk path
+    $templateDiskPath = "C:\ClusterStorage\Volume1\templates\WinSer2019Template.vhdx"  
     $diskFilePath = Join-Path -Path $diskFolderPath -ChildPath "$vmName.vhdx"
-    
+    #Use BITSTransfer to Copy Template file    
     Import-Module BitsTransfer
-Start-BitsTransfer -Source $templateDiskPath -Destination $diskFilePath -TransferType Download
-    #Copy-Item -Path $templateDiskPath -Destination $diskFilePath
+    Start-BitsTransfer -Source $templateDiskPath -Destination $diskFilePath -TransferType Download
 
     # Prompt for extending the disk size
     $extendDisk = Read-Host "Do you want to extend the OS virtual hard disk size? (yes/no)"
@@ -103,33 +99,28 @@ Start-BitsTransfer -Source $templateDiskPath -Destination $diskFilePath -Transfe
     
 }
 else {
-# Prompt for hard disk size
-$diskSize = Read-Host "Enter the hard disk size (Numeic Value only in GB)"
+        # Prompt for hard disk size
+        $diskSize = Read-Host "Enter the hard disk size (Numeic Value only in GB)"
 
-   
-
-    # Create and attach the virtual hard disk
-    $diskFilePath = Join-Path -Path $diskFolderPath -ChildPath "$vmName.vhdx"
-    # Convert the disk size from GB to bytes
-$diskSizeBytes = [UInt64]$diskSize * 1GB
-    New-VHD -Path $diskFilePath -SizeBytes $diskSizeBytes -Dynamic -Confirm:$false
+        # Create and attach the virtual hard disk
+        $diskFilePath = Join-Path -Path $diskFolderPath -ChildPath "$vmName.vhdx"
+        # Convert the disk size from GB to bytes
+        $diskSizeBytes = [UInt64]$diskSize * 1GB
+        New-VHD -Path $diskFilePath -SizeBytes $diskSizeBytes -Dynamic -Confirm:$false
     
 }
 
-
 #Promt for a Data Drive
- $MakeDataDisk = Read-Host "Do you want to another Drive for Data? (yes/no)"
+$MakeDataDisk = Read-Host "Do you want to another Drive for Data? (yes/no)"
 
-    if ($MakeDataDisk -eq "yes" -or $MakeDataDisk -eq "y" -or $MakeDataDisk -eq "Y") {
+if ($MakeDataDisk -eq "yes" -or $MakeDataDisk -eq "y" -or $MakeDataDisk -eq "Y") {
     $DatadiskSize = Read-Host "Enter the hard disk size (Numeic Value only in GB)"
-
-   
     # Create and attach the virtual hard disk
     $DataDiskName = $vmName+"-Data"
     $DatadiskFilePath = Join-Path -Path $diskFolderPath -ChildPath "$DataDiskName.vhdx"
     # Convert the disk size from GB to bytes
-$DatadiskSizeBytes = [UInt64]$DatadiskSize * 1GB
- New-VHD -Path $DatadiskFilePath -SizeBytes $DatadiskSizeBytes -Dynamic -Confirm:$false
+    $DatadiskSizeBytes = [UInt64]$DatadiskSize * 1GB
+    New-VHD -Path $DatadiskFilePath -SizeBytes $DatadiskSizeBytes -Dynamic -Confirm:$false
 
 }
 
@@ -137,12 +128,10 @@ $DatadiskSizeBytes = [UInt64]$DatadiskSize * 1GB
 
 # Create the virtual machine
 New-VM -Name $vmName -Generation $generation -Path $selectedVolume
-
 Add-VMHardDiskDrive -VMName $vmName -Path $diskFilePath
-
+#If a Data Disk was created, attach it to the VM.
 if ($MakeDataDisk -eq "yes" -or $MakeDataDisk -eq "y" -or $MakeDataDisk -eq "Y"){
-
-Add-VMHardDiskDrive -VMName $vmName -Path $DatadiskFilePath
+    Add-VMHardDiskDrive -VMName $vmName -Path $DatadiskFilePath
 }
 
 # Configure virtual machine settings
@@ -154,7 +143,8 @@ foreach ($adapter in $networkAdapters) {
     $vlan = $adapter.VLAN
     $name = $adapter.Name
     $vlanIdList = $vlan -split ',' | ForEach-Object { $_.Trim() }
-    $switchName = 'Your_Hyper-V-Virtual_Switch_Name' #replace this with the name of your Hyper-V Virtual Switch
+    #replace this with the name of your Hyper-V Virtual Switch
+    $switchName = 'Your_Hyper-V-Virtual_Switch_Name'
     Add-VMNetworkAdapter -VMName $vmName -Name $name -SwitchName $switchName
     Set-VMNetworkAdapterVlan -VMName $vmName -VMNetworkAdapterName $name -Access -VlanId $vlan
     $NewNicName = "NIC_VLAN - " + $vlan
