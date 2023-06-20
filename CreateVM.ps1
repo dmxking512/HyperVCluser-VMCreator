@@ -158,6 +158,12 @@ Remove-VMNetworkAdapter -VMName $vmName -VMNetworkAdapterName "Network Adapter"
 # Start the virtual machine
 Start-VM -Name $vmName
 
+#Update the Notes with the creation date and creator
+$createdDate = Get-Date -Format "dd-MM-yyyy"
+$createdBy = $env:USERNAME
+
+Set-VM -VMName $vmName -Notes "Created on $createdDate by $createdBy"
+
 # Add the virtual machine to the failover cluster
 Add-ClusterVirtualMachineRole -VMName $vmName
 
