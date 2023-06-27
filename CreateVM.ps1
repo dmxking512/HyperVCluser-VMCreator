@@ -2,7 +2,7 @@
 Remove-Variable * -ErrorAction SilentlyContinue
 #Banner messages
 Write-Host "-----------------------------------------"
-Write-Host "---- Cluster VM Creator Tool - V1.0 -----"
+Write-Host "---- Cluster VM Creator Tool - V1.2 -----"
 write-host "-----------------------------------------"
 # Prompt for virtual machine name
 $vmName = Read-Host "Enter the name of the virtual machine"
@@ -152,18 +152,40 @@ foreach ($adapter in $networkAdapters) {
 
 }
 
+
 #Remove the Default created network adapter
 Remove-VMNetworkAdapter -VMName $vmName -VMNetworkAdapterName "Network Adapter"
 
-# Start the virtual machine
-Start-VM -Name $vmName
 
 #Update the Notes with the creation date and creator
 $createdDate = Get-Date -Format "dd-MM-yyyy"
 $createdBy = $env:USERNAME
-
 Set-VM -VMName $vmName -Notes "Created on $createdDate by $createdBy"
+
 
 # Add the virtual machine to the failover cluster
 Add-ClusterVirtualMachineRole -VMName $vmName
 
+# Get the list of available nodes in the Failover Cluster
+$clusterNodes = Get-ClusterNode | Select-Object -ExpandProperty Name
+
+# Prompt to select the destination node for live migration
+Write-Host "Available Cluster Nodes:"
+for ($i = 0; $i -lt $clusterNodes.Count; $i++) {
+    Write-Host "$($i+1). $($clusterNodes[$i])"
+}
+
+do {
+    $nodeSelection = Read-Host "Enter the number of the destination host to start the VM on"
+    $nodeIndex = $nodeSelection - 1
+}
+while ($nodeIndex -lt 0 -or $nodeIndex -ge $clusterNodes.Count)
+
+$destinationNode = $clusterNodes[$nodeIndex]
+
+# Live migrate the Virtual Machine to the selected node
+Move-ClusterGroup -Name $vmName -Node $destinationNode
+
+
+# Start the virtual machine
+Start-ClusterGroup $vmName
