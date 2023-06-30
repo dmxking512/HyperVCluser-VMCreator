@@ -32,4 +32,7 @@ Data Disk
 - Enter the hard disk size (Numeic Value only in GB)
 
 Host Node
-- Prompt for which Node the VM should be started on. 
+- Prompt for which Node the VM should be started on.
+
+Launch Console
+- Do you want to connect to the VM console? (yes/no)
