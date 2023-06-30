@@ -21,9 +21,11 @@ Basic VM details
 
 OS Disk
 - Do you want to apply the Windows Server 2019 template? (yes/no) (If yes it copies a template VHDX from the location set on line 85)
+
 If Yes to template:
 - The Template Disk Size is XXXGB. Do you want to extend the virtual hard disk size? (yes/no)
 - Enter the new hard disk size (Numeic Value only in GB)
+
 If No to the template:
 - Enter the hard disk size (Numeic Value only in GB)
 
