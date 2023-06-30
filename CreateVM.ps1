@@ -49,7 +49,7 @@ for ($i = 0; $i -lt $clusterVolumes.Count; $i++) {
     $getfreespace = Get-ClusterSharedVolume -Name $volumeName |  select -Property Name -ExpandProperty SharedVolumeInfo
     $freespacegb= "{0:N2}" -f ($getfreespace.Partition.FreeSpace/1024/1024/1024)
     #List the volume and its available space
-    Write-Host "$($i + 1). $friendlyVolumeName | Free Space: $freespacegb GB"
+    Write-Host "$($i + 1). $VolumeName | Free Space: $freespacegb GB"
 }
 
 # Validate and retrieve the selected volume
