@@ -111,7 +111,7 @@ else {
 }
 
 #Promt for a Data Drive
-$MakeDataDisk = Read-Host "Do you want to another Drive for Data? (yes/no)"
+$MakeDataDisk = Read-Host "Do you want to add another Drive for Data? (yes/no)"
 
 if ($MakeDataDisk -eq "yes" -or $MakeDataDisk -eq "y" -or $MakeDataDisk -eq "Y") {
     $DatadiskSize = Read-Host "Enter the hard disk size (Numeic Value only in GB)"
@@ -189,3 +189,12 @@ Move-ClusterGroup -Name $vmName -Node $destinationNode
 
 # Start the virtual machine
 Start-ClusterGroup $vmName
+
+#Prompt to Launch the VM console
+$LaunchConsole = Read-Host "Do you want to connect to the VM console? (yes/no)"
+
+    if ($LaunchConsole -eq "yes" -or $LaunchConsole -eq "y" -or $LaunchConsole -eq "Y") {
+
+    Start-Process -FilePath "vmconnect.exe" -ArgumentList "$destinationNode $vmName"
+
+    }
