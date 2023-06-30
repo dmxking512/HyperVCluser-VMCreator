@@ -24,9 +24,12 @@ OS Disk
 If Yes to template:
 - The Template Disk Size is XXXGB. Do you want to extend the virtual hard disk size? (yes/no)
 - Enter the new hard disk size (Numeic Value only in GB)
-If No to template:
+If No to the template:
 - Enter the hard disk size (Numeic Value only in GB)
 
 Data Disk
 - Do you want to another Drive for Data? (yes/no)
 - Enter the hard disk size (Numeic Value only in GB)
+
+Host Node
+- Prompt for which Node the VM should be started on. 
